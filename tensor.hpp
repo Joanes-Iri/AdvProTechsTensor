@@ -23,55 +23,66 @@ public:
 	}
 
 	// Constructs a tensor with arbitrary shape and zero-initializes all elements.
-	Tensor(const std::vector< size_t >& shape) { // TODO: HOW DO YOU INITIALIZE A VECTOR TO BE OF A UNKNOWN SHAPE / RANK?
+	Tensor(const std::vector< size_t >& shape) {
 		this->shp = shape;
-		int endPos = shape.size();
-		std::vector<int> zeros(endPos, 0);
-		if (std::size_t i = 1; i != shape.size())
+		int dataCount = 1;
+		int shSize = shape.size();
+		for (int i = 0; i < shSize; i++)
 		{
-			int size = shape.at(i);
-			dims.push_back(dims);
-			i++;
+			dataCount = dataCount * shape[i];
 		}
+		std::vector<int> tmp(dataCount, 0);
+		vec = tmp;
 	}
 
 	// Constructs a tensor with arbitrary shape and fills it with the specified value.
 	explicit Tensor(const std::vector< size_t >& shape, const ComponentType& fillValue)
 	{
 		this->shp = shape;
-		std::vector< std::vector< size_t > > vec1(this->shp[0], std::vector<int>(this->shp[1], 0));
-		vec = vec1;
-		std::fill(vec.begin(), vec.end(), fillValue);
+		int dataCount = 1;
+		int shSize = shape.size();
+		for (int i = 0; i < shSize; i++)
+		{
+			dataCount = dataCount * shape[i];
+		}
+		std::vector<int> tmp(dataCount);
+		std::fill(tmp.begin(), tmp.end(), fillValue);
+		vec = tmp;
 	}
 
 	// Copy-constructor.
 	Tensor(const Tensor< ComponentType >& other) {
 
-		std::vector< size_t > copShape;
-		std::copy(other.shp.begin(), other.shp.end(), copShape);
+		std::copy(other.shape().begin(), other.shape().end(), std::back_inserter(this->shp));
 
-		std::vector< std::vector< size_t > > copContents;
-		std::copy(other.vec.begin(), other.vec.end(), copContents);
+		std::copy(other.data().begin(), other.data().end(), std::back_inserter(this->vec));
 
-		Tensor<ComponentType> returnTensor(copShape, copContents);
 	}
 
 	// Move-constructor.
 	Tensor(Tensor< ComponentType >&& other) noexcept {
 
-		std::vector< size_t > copShape = std::move(other->shape);
-		std::vector< std::vector< size_t > > copContents = std::move(other->vec);
-
-		Tensor<ComponentType> returnTensor(copShape, copContents); // TODO: might be wrong
+		this->shp = std::move(other.shape());
+		this->vec = std::move(other.data());
 	}
 
 	// Copy-assignment
 	Tensor&
-		operator=(const Tensor< ComponentType >& other);
+		operator=(const Tensor< ComponentType >& other)
+	{
+		std::copy(other.shape().begin(), other.shape().end(), std::back_inserter(this->shp));
+		std::copy(other.data().begin(), other.data().end(), std::back_inserter(this->vec));
+		return *this;
+	}
 
 	// Move-assignment
 	Tensor&
-		operator=(Tensor< ComponentType >&& other) noexcept;
+		operator=(Tensor< ComponentType >&& other) noexcept
+	{
+		this->shp = std::move(other.shape());
+		this->vec = std::move(other.data());
+		return *this;
+	}
 
 	// Destructor
 	~Tensor() {
@@ -98,26 +109,64 @@ public:
 		return vec.size();
 	}
 
+	// Returns the data of the tensor in vector shape (how it is stored)
+	[[nodiscard]] std::vector< int > data() const {
+		return vec;
+	}
+
 	// Element access function
 	const ComponentType&
-		operator()(const std::vector< size_t >& idx) const;
+		operator()(const std::vector< size_t >& idx) const
+	{
+		int linIndx = 0;
+		int indSize = idx.size();
+		int shSize = shape().size();
+		for (int i = 0; i < indSize; i++)
+		{
+			if (i < (shSize - 1))
+			{
+				linIndx += this->shape()[i] * idx[i];
+			}
+			linIndx += idx[i];
+		}
+		return this->vec[linIndx];
+	}
 
 	// Element mutation function
 	ComponentType&
-		operator()(const std::vector< size_t >& idx);
+		operator()(const std::vector< size_t >& idx) {
+		int linIndx = 0;
+		int indSize = idx.size();
+		int shSize = shape().size();
+		for (int i = 0; i < indSize; i++)
+		{
+			if (i < (shSize - 1))
+			{
+				linIndx += this->shape()[i] * idx[i];
+			}
+			linIndx += idx[i];
+		}
+		return this->vec[linIndx];
+	}
 
 private:
 	std::vector< size_t > shp;
-	std::vector<int> vec;
+	std::vector< int > vec; // TODO: it cannot be only int. It needs to be able to hold float and other arithmetic types.
 };
-
-// TODO: Implement all methods of the Tensor class template.
 
 // Returns true if the shapes and all elements of both tensors are equal.
 template< Arithmetic ComponentType >
 bool operator==(const Tensor< ComponentType >& a, const Tensor< ComponentType >& b)
 {
-	return std::equal(a.shape().begin(), a.shape().end(), b.shape().begin());
+	bool eqTensors = false;
+	if (std::equal(a.shape().begin(), a.shape().end(), b.shape().begin()))
+	{
+		if (std::equal(a.data().begin(), a.data().end(), b.data().begin()))
+		{
+			eqTensors = true;
+		}
+	}
+	return eqTensors;
 
 }
 
@@ -134,16 +183,35 @@ operator<<(std::ostream& out, const Tensor< ComponentType >& tensor)
 template< Arithmetic ComponentType >
 Tensor< ComponentType > readTensorFromFile(const std::string& filename)
 {
+	// Temp variables
+	int pos = 0;
+	std::vector<size_t> shape;
 	// Initialize local vector to store values temporarily
-	std::vector< int > tempVec = {};
+	std::vector< int > tempVec;
 
 	// File read
 	std::string valStr;
 	std::ifstream inFile(filename);
 	while (std::getline(inFile, valStr))
 	{
+		int rank = 0;
 		int valInt = stoi(valStr);
-		tempVec.insert(tempVec.end(), valInt);
+		if (pos == 0)
+		{
+			rank = valInt;
+		}
+		else
+		{
+			if (pos < rank)
+			{
+				shape.push_back(valInt);
+			}
+			else
+			{
+				tempVec.insert(tempVec.end(), valInt);
+			}
+		}
+
 	}
 
 	// Construct tensor from vector
@@ -164,9 +232,30 @@ void writeTensorToFile(const Tensor< ComponentType >& tensor, const std::string&
 	textTensor.append(std::to_string(rank) + "\n");
 
 	// Next the shape is written
-	std::vector <int> shape = tensor.shape();
-	for (int i = 0; i < tensor.rank(); i++) {
+	std::vector <size_t> shape = tensor.shape();
+	int shSize = shape.size();
+	for (int i = 0; i < shSize; i++) {
 		textTensor.append(std::to_string(shape[i]) + "\n");
+	}
+
+	// Finally the Tensor values are written
+	std::vector <int> data = tensor.data();
+	int dataSize = tensor.numElements();
+	for (int i = 0; i < dataSize; i++) {
+		textTensor.append(std::to_string(data[i]) + "\n");
+	}
+
+	// TODO: write string to file
+	std::fstream fileTens;
+	fileTens.open(filename);
+	if (!fileTens.is_open())
+	{
+		std::cout << "Unable to open the file: " + filename + "\n";
+	}
+	else
+	{
+		fileTens << textTensor;
+		fileTens.close();
 	}
 
 }

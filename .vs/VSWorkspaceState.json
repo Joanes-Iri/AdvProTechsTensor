@@ -1,0 +1,30 @@
+{
+  "ActiveTargetSystem": "WSL: Ubuntu20.04LTS",
+  "DevContainersInfoBarHidden": true,
+  "MRUPresetsPerTargetSystem": {
+    "Máquina local": {
+      "configure": "x64-debug"
+    }
+  },
+  "OutputFoldersPerTargetSystem": {
+    "Máquina local": [
+      "out\\build\\x64-debug",
+      "out\\install\\x64-debug",
+      "out\\build\\x64-release",
+      "out\\install\\x64-release",
+      "out\\build\\x86-debug",
+      "out\\install\\x86-debug",
+      "out\\build\\x86-release",
+      "out\\install\\x86-release"
+    ],
+    "WSL: Ubuntu20.04LTS": [
+      "out\\build\\linux-debug",
+      "out\\install\\linux-debug"
+    ]
+  },
+  "ExpandedNodes": [
+    ""
+  ],
+  "SelectedNode": "\\tensor.hpp",
+  "PreviewInSolutionExplorer": false
+}

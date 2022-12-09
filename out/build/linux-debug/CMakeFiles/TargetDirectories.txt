@@ -1,0 +1,4 @@
+/mnt/e/Joanesen lanak/AdvProTechsTensor/AdvProTechsTensor/out/build/linux-debug/CMakeFiles/rebuild_cache.dir
+/mnt/e/Joanesen lanak/AdvProTechsTensor/AdvProTechsTensor/out/build/linux-debug/CMakeFiles/test_matvec.dir
+/mnt/e/Joanesen lanak/AdvProTechsTensor/AdvProTechsTensor/out/build/linux-debug/CMakeFiles/edit_cache.dir
+/mnt/e/Joanesen lanak/AdvProTechsTensor/AdvProTechsTensor/out/build/linux-debug/CMakeFiles/test_tensor.dir

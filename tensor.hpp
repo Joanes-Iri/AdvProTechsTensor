@@ -18,8 +18,12 @@ public:
 	// Constructs a tensor with rank = 0 and zero-initializes the element.
 	Tensor()
 	{
-		shp = {};
-		vec = {};
+		//shp = {};
+		//vec = {};
+
+		std::vector<int> tmp;
+		tmp.assign({ 0 });
+		vec = tmp;
 	}
 
 	// Constructs a tensor with arbitrary shape and zero-initializes all elements.
@@ -178,6 +182,7 @@ operator<<(std::ostream& out, const Tensor< ComponentType >& tensor)
 {
 	return out << tensor;
 }
+
 
 // Reads a tensor from file.
 template< Arithmetic ComponentType >
